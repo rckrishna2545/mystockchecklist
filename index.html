@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Screening Ledger — NSE/BSE Watchlist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --paper:#EEF0E3;
+  --card:#FBFAF2;
+  --ledger-green:#1F3D2E;
+  --ledger-green-soft:#2C4F3C;
+  --ledger-line: rgba(31,61,46,0.14);
+  --ink:#1B2A22;
+  --ink-soft:#516358;
+  --stamp-bull:#2F6E3B;
+  --stamp-bear:#A3322A;
+  --stamp-neutral:#B4832B;
+  --gold:#B8912E;
+  --radius: 3px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    var(--ledger-line) 28px
+  );
+  color:var(--ink);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+}
+
+::selection{ background: var(--gold); color:#fff; }
+
+a{color:inherit;}
+
+/* ---------- Header ---------- */
+header.top{
+  background:var(--ledger-green);
+  color:#F2EFDE;
+  padding: 28px 24px 22px;
+  border-bottom: 4px double #97A98F;
+}
+.top-inner{
+  max-width:1180px;
+  margin:0 auto;
+}
+.brand-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+}
+h1.brand{
+  font-family:'Fraunces', serif;
+  font-weight:700;
+  font-optical-sizing:auto;
+  font-size: clamp(28px, 4vw, 40px);
+  margin:0;
+  letter-spacing:0.3px;
+}
+h1.brand .no{
+  font-family:'JetBrains Mono', monospace;
+  font-size:14px;
+  color:#C9D4C0;
+  display:block;
+  letter-spacing:2px;
+  margin-bottom:4px;
+  font-weight:500;
+}
+.tagline{
+  font-size:14px;
+  color:#C9D4C0;
+  max-width:420px;
+  margin:6px 0 0;
+  line-height:1.5;
+}
+
+/* ticker tape */
+.ticker-wrap{
+  margin-top:18px;
+  overflow:hidden;
+  border-top:1px solid #3E5C4B;
+  border-bottom:1px solid #3E5C4B;
+  padding:8px 0;
+  white-space:nowrap;
+}
+.ticker-track{
+  display:inline-flex;
+  gap:36px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  color:#DCE4D1;
+  animation: scroll-left 28s linear infinite;
+  padding-left:100%;
+}
+.ticker-track span.up{ color:#8FD6A0; }
+.ticker-track span.down{ color:#E3958C; }
+@keyframes scroll-left{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-100%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .ticker-track{ animation:none; padding-left:0; }
+}
+
+/* ---------- Layout ---------- */
+.app{
+  max-width:1180px;
+  margin:0 auto;
+  padding:28px 24px 80px;
+  display:grid;
+  grid-template-columns: 340px 1fr;
+  gap:24px;
+  align-items:start;
+}
+@media (max-width: 860px){
+  .app{ grid-template-columns: 1fr; }
+}
+
+/* ---------- Cards / panels ---------- */
+.panel{
+  background:var(--card);
+  border:1px solid var(--ledger-line);
+  border-radius:var(--radius);
+  box-shadow: 0 1px 0 rgba(31,61,46,0.06), 0 8px 20px -18px rgba(0,0,0,0.4);
+}
+
+.panel-head{
+  padding:16px 18px 12px;
+  border-bottom:1px solid var(--ledger-line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.panel-head h2{
+  font-family:'Fraunces', serif;
+  font-size:19px;
+  margin:0;
+  font-weight:600;
+}
+.count-badge{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--ink-soft);
+  background:rgba(31,61,46,0.07);
+  padding:2px 8px;
+  border-radius:20px;
+}
+
+/* ---------- Add stock ---------- */
+.add-stock{
+  padding:16px 18px 18px;
+  position:relative;
+  border-bottom:1px solid var(--ledger-line);
+}
+.add-stock label{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  color:var(--ink-soft);
+  font-weight:600;
+  display:block;
+  margin-bottom:6px;
+}
+.search-box{ position:relative; }
+#stockSearch{
+  width:100%;
+  padding:10px 12px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:14px;
+  border:1.5px solid #B8C2AC;
+  border-radius:var(--radius);
+  background:#fff;
+  color:var(--ink);
+  outline:none;
+}
+#stockSearch:focus{ border-color: var(--ledger-green); }
+.dropdown{
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0; right:0;
+  background:#fff;
+  border:1px solid #B8C2AC;
+  border-radius:var(--radius);
+  max-height:280px;
+  overflow-y:auto;
+  z-index:20;
+  box-shadow:0 10px 24px -10px rgba(0,0,0,0.35);
+  display:none;
+}
+.dropdown.show{ display:block; }
+.dropdown-item{
+  padding:9px 12px;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:13.5px;
+  border-bottom:1px solid #EFEFE6;
+}
+.dropdown-item:last-child{ border-bottom:none; }
+.dropdown-item:hover, .dropdown-item.active{ background:#F0EEDF; }
+.dropdown-item .sym{ font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--ledger-green-soft); }
+.dropdown-item .nm{ color:var(--ink-soft); font-size:12.5px; text-align:right; }
+.dropdown-empty{ padding:12px; font-size:13px; color:var(--ink-soft); }
+.dropdown-empty button{ margin-top:8px; }
+
+/* ---------- Buttons ---------- */
+button{
+  font-family:'Inter',sans-serif;
+  cursor:pointer;
+  border-radius:var(--radius);
+  border:1px solid transparent;
+  font-weight:600;
+  font-size:13.5px;
+  padding:9px 14px;
+  transition: transform .06s ease, background .15s ease;
+}
+button:active{ transform: translateY(1px); }
+.btn-primary{ background:var(--ledger-green); color:#fff; }
+.btn-primary:hover{ background:var(--ledger-green-soft); }
+.btn-ghost{ background:transparent; border:1.5px solid #B8C2AC; color:var(--ink); }
+.btn-ghost:hover{ border-color:var(--ledger-green); }
+.btn-danger{ background:transparent; border:1.5px solid #D8B2AC; color:var(--stamp-bear); }
+.btn-danger:hover{ background:#FBEDEB; }
+.btn-sm{ padding:6px 10px; font-size:12.5px; }
+.btn-block{ width:100%; }
+
+/* ---------- Watchlist ---------- */
+.watchlist{ list-style:none; margin:0; padding:0; max-height:calc(100vh - 260px); overflow-y:auto; }
+.watchlist li{
+  padding:13px 18px;
+  border-bottom:1px solid var(--ledger-line);
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.watchlist li:hover{ background:#F2F1E3; }
+.watchlist li.active{ background:#E7E9D8; border-left:3px solid var(--gold); }
+.wl-main .sym{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size:14.5px; color:var(--ledger-green-soft); }
+.wl-main .nm{ font-size:12px; color:var(--ink-soft); margin-top:2px; max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wl-meta{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.wl-remove{ background:none; border:none; color:#9AA79A; font-size:15px; padding:2px 4px; line-height:1; }
+.wl-remove:hover{ color:var(--stamp-bear); }
+
+.empty-state{ padding:32px 20px; text-align:center; color:var(--ink-soft); font-size:13.5px; line-height:1.6; }
+
+/* ---------- Stamp chip ---------- */
+.stamp-chip{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:1px;
+  padding:3px 7px;
+  border-radius:2px;
+  border:1.5px solid currentColor;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.stamp-chip.bull{ color:var(--stamp-bull); }
+.stamp-chip.bear{ color:var(--stamp-bear); }
+.stamp-chip.neutral{ color:var(--stamp-neutral); }
+.stamp-chip.none{ color:#9AA79A; border-style:dashed; }
+.wl-date{ font-size:10px; color:#8B988A; }
+
+/* ---------- Detail panel ---------- */
+.detail-head{
+  padding:20px 22px 16px;
+  border-bottom:1px solid var(--ledger-line);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.detail-title .sym{ font-family:'JetBrains Mono', monospace; font-size:13px; letter-spacing:1.5px; color:var(--ink-soft); }
+.detail-title h2{ font-family:'Fraunces', serif; font-size:24px; margin:2px 0 0; font-weight:700; }
+.detail-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+.detail-body{ padding:20px 22px 26px; }
+
+/* Section / checklist */
+.section{ margin-bottom:26px; }
+.section-title{
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  font-size:16px;
+  margin:0 0 4px;
+  color:var(--ledger-green-soft);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-title .idx{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:#fff;
+  background:var(--ledger-green);
+  padding:2px 6px;
+  border-radius:2px;
+}
+.section-sub{ font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; }
+
+.field{ margin-bottom:16px; }
+.field label.q{ display:block; font-size:13.5px; font-weight:600; margin-bottom:7px; }
+
+.radio-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.radio-row label{
+  font-size:12.8px;
+  padding:7px 12px;
+  border:1.5px solid #C4CBB8;
+  border-radius:20px;
+  cursor:pointer;
+  background:#fff;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.radio-row input{ accent-color: var(--ledger-green); }
+.radio-row label:has(input:checked){ background:var(--ledger-green); border-color:var(--ledger-green); color:#fff; }
+
+.num-row{ display:flex; gap:12px; flex-wrap:wrap; }
+.num-field{ flex:1; min-width:140px; }
+.num-field input, textarea{
+  width:100%;
+  padding:9px 10px;
+  border:1.5px solid #C4CBB8;
+  border-radius:var(--radius);
+  font-family:'JetBrains Mono', monospace;
+  font-size:13.5px;
+  background:#fff;
+  color:var(--ink);
+}
+textarea{ font-family:'Inter',sans-serif; min-height:70px; resize:vertical; }
+.num-field .u{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
+
+.form-actions{ display:flex; gap:10px; padding-top:6px; border-top:1px dashed var(--ledger-line); margin-top:10px; }
+
+/* ---------- Result / verdict view ---------- */
+.verdict-hero{ display:flex; align-items:center; gap:20px; padding:18px 4px 24px; flex-wrap:wrap; }
+.stamp-big{
+  font-family:'JetBrains Mono', monospace;
+  font-weight:700;
+  font-size:22px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  border:3px double currentColor;
+  padding:12px 20px;
+  border-radius:4px;
+  transform: rotate(-4deg);
+  display:inline-block;
+}
+.stamp-big.bull{ color:var(--stamp-bull); }
+.stamp-big.bear{ color:var(--stamp-bear); }
+.stamp-big.neutral{ color:var(--stamp-neutral); }
+.verdict-meta{ font-size:13px; color:var(--ink-soft); line-height:1.7; }
+.verdict-meta b{ color:var(--ink); }
+
+.score-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin: 6px 0 22px; }
+.score-card{ border:1px solid var(--ledger-line); border-radius:var(--radius); padding:12px 14px; background:#fff; }
+.score-card .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); }
+.score-card .val{ font-family:'JetBrains Mono', monospace; font-size:20px; font-weight:700; margin-top:4px; }
+.score-card .val.pos{ color:var(--stamp-bull); }
+.score-card .val.neg{ color:var(--stamp-bear); }
+.score-card .val.zero{ color:var(--stamp-neutral); }
+
+.answers-review{ font-size:13px; }
+.answers-review .row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--ledger-line); gap:14px; }
+.answers-review .row .q{ color:var(--ink-soft); max-width:60%; }
+.answers-review .row .a{ font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right; }
+.notes-box{
+  background:#F5F3E6;
+  border-left:3px solid var(--gold);
+  padding:12px 14px;
+  font-size:13px;
+  line-height:1.6;
+  margin-top:18px;
+  white-space:pre-wrap;
+}
+
+footer.site{ text-align:center; padding:24px; font-size:11.5px; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand-row">
+      <div>
+        <span class="no">VOL. I · NSE / BSE EDITION</span>
+        <h1 class="brand">The Screening Ledger</h1>
+      </div>
+    </div>
+    <p class="tagline">A manual due-diligence book for your watchlist. Add a stock, work the checklist, and the ledger stamps a verdict — bullish, bearish, or neutral.</p>
+    <div class="ticker-wrap" aria-hidden="true">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </div>
+</header>
+
+<main class="app">
+  <!-- LEFT: Watchlist -->
+  <section class="panel" aria-label="Watchlist">
+    <div class="add-stock">
+      <label for="stockSearch">Add a stock to the ledger</label>
+      <div class="search-box">
+        <input type="text" id="stockSearch" placeholder="Search by symbol or name — e.g. INFY, Tata Motors" autocomplete="off">
+        <div class="dropdown" id="dropdown"></div>
+      </div>
+    </div>
+    <div class="panel-head">
+      <h2>Watchlist</h2>
+      <span class="count-badge" id="wlCount">0 stocks</span>
+    </div>
+    <ul class="watchlist" id="watchlist"></ul>
+  </section>
+
+  <!-- RIGHT: Detail -->
+  <section class="panel" id="detailPanel" aria-label="Stock detail">
+    <div class="empty-state" id="emptyState">
+      Nothing open yet.<br>
+      Add a stock on the left, or click one already on your ledger, to begin a screening.
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  Built for personal research only — not investment advice. Data you enter is stored locally in your browser (no server, no tracking).
+</footer>
+
+<script>
+/* =========================================================
+   STOCK UNIVERSE — curated list of major NSE-listed names.
+   Not exhaustive (NSE lists 2000+ stocks). If a stock isn't
+   found, use "Add as custom stock" to add it by symbol.
+   ========================================================= */
+const STOCKS = [
+["RELIANCE","Reliance Industries Ltd"],["TCS","Tata Consultancy Services Ltd"],
+["HDFCBANK","HDFC Bank Ltd"],["ICICIBANK","ICICI Bank Ltd"],["INFY","Infosys Ltd"],
+["HINDUNILVR","Hindustan Unilever Ltd"],["ITC","ITC Ltd"],["SBIN","State Bank of India"],
+["BHARTIARTL","Bharti Airtel Ltd"],["KOTAKBANK","Kotak Mahindra Bank Ltd"],
+["LT","Larsen & Toubro Ltd"],["AXISBANK","Axis Bank Ltd"],["BAJFINANCE","Bajaj Finance Ltd"],
+["ASIANPAINT","Asian Paints Ltd"],["MARUTI","Maruti Suzuki India Ltd"],
+["TITAN","Titan Company Ltd"],["SUNPHARMA","Sun Pharmaceutical Industries Ltd"],
+["ULTRACEMCO","UltraTech Cement Ltd"],["NESTLEIND","Nestle India Ltd"],
+["WIPRO","Wipro Ltd"],["ONGC","Oil & Natural Gas Corporation Ltd"],
+["NTPC","NTPC Ltd"],["POWERGRID","Power Grid Corporation of India Ltd"],
+["M&M","Mahindra & Mahindra Ltd"],["TATAMOTORS","Tata Motors Ltd"],
+["TATASTEEL","Tata Steel Ltd"],["JSWSTEEL","JSW Steel Ltd"],
+["ADANIENT","Adani Enterprises Ltd"],["ADANIPORTS","Adani Ports & SEZ Ltd"],
+["COALINDIA","Coal India Ltd"],["BAJAJFINSV","Bajaj Finserv Ltd"],
+["HCLTECH","HCL Technologies Ltd"],["TECHM","Tech Mahindra Ltd"],
+["INDUSINDBK","IndusInd Bank Ltd"],["DIVISLAB","Divi's Laboratories Ltd"],
+["DRREDDY","Dr. Reddy's Laboratories Ltd"],["CIPLA","Cipla Ltd"],
+["EICHERMOT","Eicher Motors Ltd"],["BRITANNIA","Britannia Industries Ltd"],
+["GRASIM","Grasim Industries Ltd"],["HEROMOTOCO","Hero MotoCorp Ltd"],
+["HINDALCO","Hindalco Industries Ltd"],["BPCL","Bharat Petroleum Corporation Ltd"],
+["SBILIFE","SBI Life Insurance Company Ltd"],["HDFCLIFE","HDFC Life Insurance Company Ltd"],
+["APOLLOHOSP","Apollo Hospitals Enterprise Ltd"],["BAJAJ-AUTO","Bajaj Auto Ltd"],
+["UPL","UPL Ltd"],["SHREECEM","Shree Cement Ltd"],["TATACONSUM","Tata Consumer Products Ltd"],
+["VEDL","Vedanta Ltd"],["GAIL","GAIL India Ltd"],["PIDILITIND","Pidilite Industries Ltd"],
+["DABUR","Dabur India Ltd"],["GODREJCP","Godrej Consumer Products Ltd"],
+["SIEMENS","Siemens Ltd"],["DLF","DLF Ltd"],["HAVELLS","Havells India Ltd"],
+["AMBUJACEM","Ambuja Cements Ltd"],["ICICIPRULI","ICICI Prudential Life Insurance"],
+["ICICIGI","ICICI Lombard General Insurance"],["BANKBARODA","Bank of Baroda"],
+["PNB","Punjab National Bank"],["CANBK","Canara Bank"],["IDFCFIRSTB","IDFC First Bank Ltd"],
+["FEDERALBNK","Federal Bank Ltd"],["AUBANK","AU Small Finance Bank Ltd"],
+["BANDHANBNK","Bandhan Bank Ltd"],["PFC","Power Finance Corporation Ltd"],
+["RECLTD","REC Ltd"],["IRFC","Indian Railway Finance Corporation Ltd"],
+["ZOMATO","Eternal Ltd (Zomato)"],["NYKAA","FSN E-Commerce Ventures (Nykaa)"],
+["PAYTM","One 97 Communications (Paytm)"],["POLICYBZR","PB Fintech (Policybazaar)"],
+["IRCTC","Indian Railway Catering & Tourism Corp"],["DMART","Avenue Supermarts (DMart)"],
+["TRENT","Trent Ltd"],["PGHH","Procter & Gamble Hygiene & Health Care"],
+["COLPAL","Colgate-Palmolive India Ltd"],["MARICO","Marico Ltd"],
+["BERGEPAINT","Berger Paints India Ltd"],["MCDOWELL-N","United Spirits Ltd"],
+["UBL","United Breweries Ltd"],["PAGEIND","Page Industries Ltd"],
+["ABB","ABB India Ltd"],["CUMMINSIND","Cummins India Ltd"],
+["BOSCHLTD","Bosch Ltd"],["BHEL","Bharat Heavy Electricals Ltd"],
+["BEL","Bharat Electronics Ltd"],["HAL","Hindustan Aeronautics Ltd"],
+["SAIL","Steel Authority of India Ltd"],["NMDC","NMDC Ltd"],
+["JINDALSTEL","Jindal Steel & Power Ltd"],["NATIONALUM","National Aluminium Co Ltd"],
+["PIIND","PI Industries Ltd"],["SRF","SRF Ltd"],["ATUL","Atul Ltd"],
+["AARTIIND","Aarti Industries Ltd"],["DEEPAKNTR","Deepak Nitrite Ltd"],
+["TATAPOWER","Tata Power Company Ltd"],["ADANIGREEN","Adani Green Energy Ltd"],
+["ADANIPOWER","Adani Power Ltd"],["TORNTPOWER","Torrent Power Ltd"],
+["IEX","Indian Energy Exchange Ltd"],["CONCOR","Container Corporation of India"],
+["GMRINFRA","GMR Airports Ltd"],["INDIGO","InterGlobe Aviation (IndiGo)"],
+["LUPIN","Lupin Ltd"],["AUROPHARMA","Aurobindo Pharma Ltd"],
+["ALKEM","Alkem Laboratories Ltd"],["TORNTPHARM","Torrent Pharmaceuticals Ltd"],
+["BIOCON","Biocon Ltd"],["ZYDUSLIFE","Zydus Lifesciences Ltd"],
+["MPHASIS","Mphasis Ltd"],["LTIM","LTIMindtree Ltd"],["PERSISTENT","Persistent Systems Ltd"],
+["COFORGE","Coforge Ltd"],["OFSS","Oracle Financial Services Software"],
+["MUTHOOTFIN","Muthoot Finance Ltd"],["CHOLAFIN","Cholamandalam Investment & Finance"],
+["LICHSGFIN","LIC Housing Finance Ltd"],["SHRIRAMFIN","Shriram Finance Ltd"],
+["LICI","Life Insurance Corporation of India"],["MOTHERSON","Samvardhana Motherson Intl"],
+["ASHOKLEY","Ashok Leyland Ltd"],["TVSMOTOR","TVS Motor Company Ltd"],
+["BALKRISIND","Balkrishna Industries Ltd"],["MRF","MRF Ltd"],
+["EXIDEIND","Exide Industries Ltd"],["POLYCAB","Polycab India Ltd"],
+["VOLTAS","Voltas Ltd"],["CROMPTON","Crompton Greaves Consumer Electricals"],
+["DIXON","Dixon Technologies India Ltd"],["KALYANKJIL","Kalyan Jewellers India Ltd"],
+["JUBLFOOD","Jubilant Foodworks Ltd"],["VBL","Varun Beverages Ltd"],
+["ESCORTS","Escorts Kubota Ltd"],["SONACOMS","Sona BLW Precision Forgings"],
+["ABCAPITAL","Aditya Birla Capital Ltd"],["ABFRL","Aditya Birla Fashion & Retail"],
+["INDUSTOWER","Indus Towers Ltd"],["OIL","Oil India Ltd"],
+["PETRONET","Petronet LNG Ltd"],["GUJGASLTD","Gujarat Gas Ltd"],
+["IGL","Indraprastha Gas Ltd"],["MGL","Mahanagar Gas Ltd"],
+["ACC","ACC Ltd"],["JKCEMENT","JK Cement Ltd"],["RAMCOCEM","The Ramco Cements Ltd"],
+["ASTRAL","Astral Ltd"],["SUPREMEIND","Supreme Industries Ltd"],
+["CGPOWER","CG Power & Industrial Solutions"],["HINDPETRO","Hindustan Petroleum Corp"],
+["IOC","Indian Oil Corporation Ltd"],["SUZLON","Suzlon Energy Ltd"],
+["YESBANK","Yes Bank Ltd"],["IDEA","Vodafone Idea Ltd"],["RVNL","Rail Vikas Nigam Ltd"],
+["IRB","IRB Infrastructure Developers Ltd"],["NHPC","NHPC Ltd"],["SJVN","SJVN Ltd"]
+];
+
+/* =========================================================
+   STATE + STORAGE
+   ========================================================= */
+const LS_WATCHLIST = "ledger:watchlist";
+const LS_SCREEN_PREFIX = "ledger:screening:";
+
+function loadWatchlist(){
+  try{ return JSON.parse(localStorage.getItem(LS_WATCHLIST) || "[]"); }
+  catch(e){ return []; }
+}
+function saveWatchlist(list){ localStorage.setItem(LS_WATCHLIST, JSON.stringify(list)); }
+function loadScreening(sym){
+  try{ return JSON.parse(localStorage.getItem(LS_SCREEN_PREFIX+sym) || "null"); }
+  catch(e){ return null; }
+}
+function saveScreening(sym, data){ localStorage.setItem(LS_SCREEN_PREFIX+sym, JSON.stringify(data)); }
+function removeScreening(sym){ localStorage.removeItem(LS_SCREEN_PREFIX+sym); }
+
+let watchlist = loadWatchlist();
+let activeSymbol = null;
+let formMode = false;
+
+/* =========================================================
+   CHECKLIST DEFINITION
+   ========================================================= */
+const CHECKLIST = [
+  { section:"A", title:"Trend & Technicals", sub:"Is the stock's price action actually turning, or still falling?",
+    fields:[
+      {id:"distFromRange", type:"radio", label:"Where is the price relative to its 52-week range?",
+        options:[
+          {v:"near_low", label:"Near the low", score:1},
+          {v:"mid", label:"Mid-range", score:0},
+          {v:"near_high", label:"Near the high", score:-1}
+        ]},
+      {id:"dma50", type:"radio", label:"Price vs 50-day moving average",
+        options:[
+          {v:"above", label:"Above 50-DMA", score:1},
+          {v:"below", label:"Below 50-DMA", score:-1}
+        ]},
+      {id:"dma200", type:"radio", label:"Price vs 200-day moving average",
+        options:[
+          {v:"above", label:"Above 200-DMA", score:1},
+          {v:"below", label:"Below 200-DMA", score:-1}
+        ]},
+      {id:"rsi", type:"number", label:"Current RSI (14-day)", hint:"Below 30 = oversold, above 70 = overbought",
+        score:(v)=>{ if(v==="" || v===null) return 0; v=Number(v); if(v<30) return 1; if(v>70) return -1; return 0; }},
+      {id:"volume", type:"radio", label:"Volume trend",
+        options:[
+          {v:"rising_up", label:"Rising on up-days", score:1},
+          {v:"rising_down", label:"Rising on down-days", score:-1},
+          {v:"flat", label:"Flat / unclear", score:0}
+        ]}
+    ]},
+  { section:"B", title:"Fundamentals", sub:"Does the business itself support holding this for months, not days?",
+    fields:[
+      {id:"peVsSector", type:"radio", label:"P/E ratio vs sector average",
+        options:[
+          {v:"lower", label:"Lower than sector", score:1},
+          {v:"similar", label:"Similar to sector", score:0},
+          {v:"higher", label:"Higher than sector", score:-1}
+        ]},
+      {id:"debtEquity", type:"number", label:"Debt-to-Equity ratio", hint:"Below 1 is generally low, above 2 is high",
+        score:(v)=>{ if(v==="" || v===null) return 0; v=Number(v); if(v<1) return 1; if(v>2) return -1; return 0; }},
+      {id:"revGrowth", type:"number", label:"Revenue growth, YoY (%)",
+        score:(v)=>{ if(v==="" || v===null) return 0; v=Number(v); if(v>10) return 1; if(v<0) return -1; return 0; }},
+      {id:"earnGrowth", type:"number", label:"Earnings growth, YoY (%)",
+        score:(v)=>{ if(v==="" || v===null) return 0; v=Number(v); if(v>10) return 1; if(v<0) return -1; return 0; }},
+      {id:"marginTrend", type:"radio", label:"Profit margin trend (recent quarters)",
+        options:[
+          {v:"improving", label:"Improving", score:1},
+          {v:"stable", label:"Stable", score:0},
+          {v:"declining", label:"Declining", score:-1}
+        ]}
+    ]},
+  { section:"C", title:"Risk & Sentiment", sub:"Indian-market-specific red and green flags.",
+    fields:[
+      {id:"analystConsensus", type:"radio", label:"Analyst consensus",
+        options:[
+          {v:"buy", label:"Mostly Buy", score:1},
+          {v:"mixed", label:"Mixed / Hold", score:0},
+          {v:"sell", label:"Mostly Sell", score:-1}
+        ]},
+      {id:"promoterHolding", type:"radio", label:"Promoter holding trend",
+        options:[
+          {v:"increasing", label:"Increasing / stable, unpledged", score:1},
+          {v:"stable", label:"Stable, some pledge", score:0},
+          {v:"decreasing", label:"Decreasing or heavily pledged", score:-1}
+        ]},
+      {id:"sectorTail", type:"radio", label:"Sector backdrop",
+        options:[
+          {v:"tailwind", label:"Tailwind", score:1},
+          {v:"neutral", label:"Neutral", score:0},
+          {v:"headwind", label:"Headwind", score:-1}
+        ]}
+    ]}
+];
+
+/* =========================================================
+   TICKER TAPE
+   ========================================================= */
+function renderTicker(){
+  const track = document.getElementById("tickerTrack");
+  const items = watchlist.length ? watchlist : [["RELIANCE"],["TCS"],["INFY"],["HDFCBANK"],["TATAMOTORS"]];
+  let html = "";
+  const doubled = items.concat(items).concat(items);
+  doubled.forEach(([sym])=>{
+    const scr = loadScreening(sym);
+    let cls="", arrow="";
+    if(scr){
+      if(scr.verdict==="bull"){ cls="up"; arrow="▲"; }
+      else if(scr.verdict==="bear"){ cls="down"; arrow="▼"; }
+      else { arrow="—"; }
+    }
+    html += `<span class="${cls}">${sym} ${arrow}</span>`;
+  });
+  track.innerHTML = html;
+}
+
+/* =========================================================
+   WATCHLIST RENDERING
+   ========================================================= */
+function renderWatchlist(){
+  const ul = document.getElementById("watchlist");
+  const countBadge = document.getElementById("wlCount");
+  countBadge.textContent = watchlist.length + (watchlist.length===1 ? " stock" : " stocks");
+
+  if(!watchlist.length){
+    ul.innerHTML = `<li style="cursor:default;"><div class="empty-state" style="padding:24px 4px;">Your ledger is empty. Search above to add your first stock.</div></li>`;
+    renderTicker();
+    return;
+  }
+
+  ul.innerHTML = "";
+  watchlist.forEach(([sym, name])=>{
+    const scr = loadScreening(sym);
+    const li = document.createElement("li");
+    li.className = sym===activeSymbol ? "active" : "";
+    li.setAttribute("data-sym", sym);
+
+    let chip = `<span class="stamp-chip none">Not screened</span>`;
+    let dateStr = "";
+    if(scr){
+      const label = scr.verdict==="bull" ? "Bullish" : scr.verdict==="bear" ? "Bearish" : "Neutral";
+      const cls = scr.verdict==="bull" ? "bull" : scr.verdict==="bear" ? "bear" : "neutral";
+      chip = `<span class="stamp-chip ${cls}">${label}</span>`;
+      dateStr = `<span class="wl-date">${formatDate(scr.savedAt)}</span>`;
+    }
+
+    li.innerHTML = `
+      <div class="wl-main">
+        <div class="sym">${sym}</div>
+        <div class="nm">${escapeHtml(name)}</div>
+      </div>
+      <div class="wl-meta">
+        ${chip}
+        ${dateStr}
+      </div>
+      <button class="wl-remove" title="Remove from watchlist" data-remove="${sym}">✕</button>
+    `;
+    li.addEventListener("click", (e)=>{
+      if(e.target.closest("[data-remove]")) return;
+      openStock(sym);
+    });
+    ul.appendChild(li);
+  });
+
+  ul.querySelectorAll("[data-remove]").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      e.stopPropagation();
+      const sym = btn.getAttribute("data-remove");
+      removeFromWatchlist(sym);
+    });
+  });
+
+  renderTicker();
+}
+
+function removeFromWatchlist(sym){
+  if(!confirm(`Remove ${sym} from your watchlist? Its saved screening will also be deleted.`)) return;
+  watchlist = watchlist.filter(([s])=>s!==sym);
+  saveWatchlist(watchlist);
+  removeScreening(sym);
+  if(activeSymbol===sym){
+    activeSymbol = null;
+    formMode = false;
+    renderDetail();
+  }
+  renderWatchlist();
+}
+
+function formatDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+}
+function escapeHtml(s){
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/* =========================================================
+   SEARCH / ADD STOCK
+   ========================================================= */
+const searchInput = document.getElementById("stockSearch");
+const dropdown = document.getElementById("dropdown");
+
+searchInput.addEventListener("input", ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  if(!q){ dropdown.classList.remove("show"); return; }
+
+  const already = new Set(watchlist.map(([s])=>s));
+  const matches = STOCKS.filter(([sym,name])=>
+    (sym.toLowerCase().includes(q) || name.toLowerCase().includes(q)) && !already.has(sym)
+  ).slice(0,8);
+
+  if(matches.length){
+    dropdown.innerHTML = matches.map(([sym,name])=>
+      `<div class="dropdown-item" data-sym="${sym}" data-name="${escapeHtml(name)}">
+         <span class="sym">${sym}</span><span class="nm">${escapeHtml(name)}</span>
+       </div>`
+    ).join("");
+  } else {
+    dropdown.innerHTML = `<div class="dropdown-empty">
+        No match in the curated list of ~150 major NSE names.<br>
+        <button class="btn-ghost btn-sm" id="addCustomBtn">Add "${escapeHtml(searchInput.value.trim())}" as a custom stock</button>
+      </div>`;
+  }
+  dropdown.classList.add("show");
+
+  const customBtn = document.getElementById("addCustomBtn");
+  if(customBtn){
+    customBtn.addEventListener("click", ()=>{
+      const raw = searchInput.value.trim();
+      addStock(raw.toUpperCase(), raw);
+    });
+  }
+
+  dropdown.querySelectorAll(".dropdown-item").forEach(item=>{
+    item.addEventListener("click", ()=>{
+      addStock(item.getAttribute("data-sym"), item.getAttribute("data-name"));
+    });
+  });
+});
+
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest(".search-box")) dropdown.classList.remove("show");
+});
+
+function addStock(sym, name){
+  if(!sym) return;
+  if(watchlist.some(([s])=>s===sym)){
+    openStock(sym);
+  } else {
+    watchlist.push([sym, name || sym]);
+    saveWatchlist(watchlist);
+    openStock(sym);
+  }
+  searchInput.value = "";
+  dropdown.classList.remove("show");
+  renderWatchlist();
+}
+
+function openStock(sym){
+  activeSymbol = sym;
+  formMode = false;
+  renderWatchlist();
+  renderDetail();
+}
+
+/* =========================================================
+   DETAIL PANEL
+   ========================================================= */
+function getStockName(sym){
+  const found = watchlist.find(([s])=>s===sym);
+  return found ? found[1] : sym;
+}
+
+function renderDetail(){
+  const panel = document.getElementById("detailPanel");
+  if(!activeSymbol){
+    panel.innerHTML = `<div class="empty-state">Nothing open yet.<br>Add a stock on the left, or click one already on your ledger, to begin a screening.</div>`;
+    return;
+  }
+
+  const name = getStockName(activeSymbol);
+  const scr = loadScreening(activeSymbol);
+
+  let bodyHtml = "";
+  let actionsHtml = "";
+
+  if(formMode || !scr){
+    actionsHtml = scr ? `<button class="btn-ghost btn-sm" id="cancelFormBtn">Cancel</button>` : "";
+    bodyHtml = renderChecklistForm(scr);
+  } else {
+    actionsHtml = `
+      <button class="btn-ghost btn-sm" id="redoBtn">↻ Redo screening</button>
+      <button class="btn-danger btn-sm" id="removeBtn">Remove from watchlist</button>
+    `;
+    bodyHtml = renderVerdict(scr);
+  }
+
+  panel.innerHTML = `
+    <div class="detail-head">
+      <div class="detail-title">
+        <div class="sym">${activeSymbol} · NSE</div>
+        <h2>${escapeHtml(name)}</h2>
+      </div>
+      <div class="detail-actions">${actionsHtml}</div>
+    </div>
+    <div class="detail-body">${bodyHtml}</div>
+  `;
+
+  const redoBtn = document.getElementById("redoBtn");
+  if(redoBtn) redoBtn.addEventListener("click", ()=>{ formMode = true; renderDetail(); });
+
+  const cancelBtn = document.getElementById("cancelFormBtn");
+  if(cancelBtn) cancelBtn.addEventListener("click", ()=>{ formMode = false; renderDetail(); });
+
+  const removeBtn = document.getElementById("removeBtn");
+  if(removeBtn) removeBtn.addEventListener("click", ()=> removeFromWatchlist(activeSymbol));
+
+  const form = document.getElementById("checklistForm");
+  if(form) form.addEventListener("submit", onSubmitChecklist);
+}
+
+function renderChecklistForm(existing){
+  const answers = existing ? existing.answers : {};
+  let html = `<p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Work through each section honestly — leave a field blank if you don't have the data yet, it'll simply score neutral.</p>
+    <form id="checklistForm">`;
+
+  CHECKLIST.forEach(sec=>{
+    html += `<div class="section">
+      <h3 class="section-title"><span class="idx">${sec.section}</span>${sec.title}</h3>
+      <p class="section-sub">${sec.sub}</p>`;
+
+    sec.fields.forEach(f=>{
+      const prev = answers[f.id];
+      if(f.type==="radio"){
+        html += `<div class="field"><label class="q">${f.label}</label><div class="radio-row">`;
+        f.options.forEach(opt=>{
+          const checked = prev===opt.v ? "checked" : "";
+          html += `<label><input type="radio" name="${f.id}" value="${opt.v}" ${checked}> ${opt.label}</label>`;
+        });
+        html += `</div></div>`;
+      } else if(f.type==="number"){
+        const val = (prev!==undefined && prev!==null) ? prev : "";
+        html += `<div class="field"><label class="q">${f.label}</label>
+          <div class="num-row"><div class="num-field">
+            <input type="number" step="any" name="${f.id}" value="${val}">
+            ${f.hint ? `<div class="u">${f.hint}</div>` : ""}
+          </div></div>
+        </div>`;
+      }
+    });
+    html += `</div>`;
+  });
+
+  const prevNotes = answers.notes || "";
+  html += `<div class="section">
+      <h3 class="section-title"><span class="idx">D</span>Notes</h3>
+      <div class="field">
+        <label class="q">Anything else worth remembering — recent news, a gut check, why you're watching this</label>
+        <textarea name="notes">${escapeHtml(prevNotes)}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Save screening result</button>
+    </div>
+  </form>`;
+
+  return html;
+}
+
+function onSubmitChecklist(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const answers = {};
+  let totalScore = 0;
+  const sectionScores = {A:0,B:0,C:0};
+
+  CHECKLIST.forEach(sec=>{
+    sec.fields.forEach(f=>{
+      const raw = fd.get(f.id);
+      answers[f.id] = raw;
+      let pts = 0;
+      if(f.type==="radio"){
+        const opt = f.options.find(o=>o.v===raw);
+        pts = opt ? opt.score : 0;
+      } else if(f.type==="number"){
+        pts = f.score(raw==="" ? "" : raw);
+        answers[f.id] = raw;
+      }
+      totalScore += pts;
+      sectionScores[sec.section] += pts;
+    });
+  });
+  answers.notes = fd.get("notes") || "";
+
+  let verdict = "neutral";
+  if(totalScore >= 4) verdict = "bull";
+  else if(totalScore <= -4) verdict = "bear";
+
+  const data = {
+    answers,
+    score: totalScore,
+    sectionScores,
+    verdict,
+    savedAt: new Date().toISOString()
+  };
+  saveScreening(activeSymbol, data);
+  formMode = false;
+  renderDetail();
+  renderWatchlist();
+}
+
+function renderVerdict(scr){
+  const verdictLabel = scr.verdict==="bull" ? "Bullish" : scr.verdict==="bear" ? "Bearish" : "Neutral";
+  const stampClass = scr.verdict;
+
+  let html = `<div class="verdict-hero">
+    <div class="stamp-big ${stampClass}">${verdictLabel}</div>
+    <div class="verdict-meta">
+      Net score: <b>${scr.score > 0 ? "+" : ""}${scr.score}</b><br>
+      Screened: <b>${formatDate(scr.savedAt)}</b>
+    </div>
+  </div>`;
+
+  html += `<div class="score-grid">`;
+  const secNames = {A:"Trend & Technicals", B:"Fundamentals", C:"Risk & Sentiment"};
+  Object.keys(secNames).forEach(k=>{
+    const v = scr.sectionScores[k] ?? 0;
+    const cls = v>0 ? "pos" : v<0 ? "neg" : "zero";
+    html += `<div class="score-card">
+      <div class="lbl">${secNames[k]}</div>
+      <div class="val ${cls}">${v>0?"+":""}${v}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="answers-review">`;
+  CHECKLIST.forEach(sec=>{
+    sec.fields.forEach(f=>{
+      const raw = scr.answers[f.id];
+      let display = "—";
+      if(f.type==="radio"){
+        const opt = f.options.find(o=>o.v===raw);
+        display = opt ? opt.label : "—";
+      } else if(f.type==="number"){
+        display = (raw!==undefined && raw!=="" && raw!==null) ? raw : "—";
+      }
+      html += `<div class="row"><span class="q">${f.label}</span><span class="a">${escapeHtml(String(display))}</span></div>`;
+    });
+  });
+  html += `</div>`;
+
+  if(scr.answers.notes){
+    html += `<div class="notes-box">${escapeHtml(scr.answers.notes)}</div>`;
+  }
+
+  return html;
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderWatchlist();
+renderDetail();
+</script>
+</body>
+</html>
